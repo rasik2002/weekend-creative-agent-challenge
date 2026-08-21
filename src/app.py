@@ -76,8 +76,38 @@ Output ONLY the summary text, nothing else. Make it engaging!"""
         print(f"Bedrock invocation failed, falling back to basic summary. Error: {e}")
         return f"This repository, {repo_info['name']}, is built in {repo_info['language']} and has {repo_info['stars']} stars! The author describes it as: {repo_info['description']}. Go check it out!"
 
+def send_telegram_message(repo_info, summary):
+    """Sends the summary to a Telegram channel/chat."""
+    bot_token = os.environ.get('TELEGRAM_BOT_TOKEN')
+    chat_id = os.environ.get('TELEGRAM_CHAT_ID')
+    
+    if not bot_token or not chat_id:
+        print("Telegram credentials not found, skipping Telegram post.")
+        return
+        
+    message = f"🚀 *New Trending Repo*: [{repo_info['name']}]({repo_info['url']})\n\n"
+    message += f"⭐ {repo_info['stars']:,} Stars | 💻 {repo_info['language']}\n\n"
+    message += f"{summary}"
+    
+    url = f"https://api.telegram.org/bot{bot_token}/sendMessage"
+    payload = {
+        "chat_id": chat_id,
+        "text": message,
+        "parse_mode": "Markdown"
+    }
+    
+    try:
+        response = requests.post(url, json=payload)
+        response.raise_for_status()
+        print("Successfully posted to Telegram!")
+    except Exception as e:
+        print(f"Failed to post to Telegram: {e}")
+
 def generate_html(repo_info, summary):
     """Generates a beautiful HTML page."""
+    from datetime import datetime
+    today_date = datetime.now().strftime("%B %d")
+    
     html = f"""<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -86,107 +116,228 @@ def generate_html(repo_info, summary):
     <title>Daily GitHub Explorer</title>
     <style>
         :root {{
-            --bg-color: #0f172a;
-            --card-bg: #1e293b;
-            --text-primary: #f8fafc;
-            --text-secondary: #94a3b8;
-            --accent: #3b82f6;
-            --accent-hover: #60a5fa;
+            --bg-color: #f8f9fa;
+            --text-main: #111827;
+            --text-light: #6b7280;
+            --accent-green: #10b981;
+            --border-color: #e5e7eb;
         }}
         body {{
-            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
             background-color: var(--bg-color);
-            color: var(--text-primary);
+            color: var(--text-main);
+            margin: 0;
+            padding: 0;
             display: flex;
             justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            margin: 0;
-            padding: 20px;
         }}
-        .container {{
-            background: var(--card-bg);
-            border-radius: 16px;
-            padding: 40px;
-            max-width: 600px;
+        .app-container {{
+            background-color: #ffffff;
             width: 100%;
-            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
-            border: 1px solid #334155;
-            transition: transform 0.3s ease;
+            max-width: 480px;
+            min-height: 100vh;
+            padding: 32px 24px;
+            box-sizing: border-box;
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
-        .container:hover {{
-            transform: translateY(-5px);
-        }}
-        h1 {{
-            font-size: 1.5rem;
-            color: var(--text-secondary);
-            text-transform: uppercase;
-            letter-spacing: 2px;
-            margin-bottom: 20px;
-            font-weight: 600;
-        }}
-        .repo-name {{
-            font-size: 2.5rem;
-            margin: 0 0 10px 0;
-            background: linear-gradient(to right, #60a5fa, #a78bfa);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-        }}
-        .stats {{
+        .header-top {{
             display: flex;
-            gap: 15px;
-            margin-bottom: 25px;
-            color: var(--text-secondary);
-            font-size: 0.9rem;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
         }}
-        .stat-badge {{
-            background: rgba(255,255,255,0.05);
-            padding: 4px 12px;
+        .logo-area {{
+            font-weight: 700;
+            font-size: 1.2rem;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }}
+        .logo-icon {{
+            width: 24px;
+            height: 24px;
+            background-color: var(--text-main);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 12px;
+        }}
+        .menu-btn {{
+            border: 1px solid var(--border-color);
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+        }}
+        .tags-row {{
+            display: flex;
+            gap: 12px;
+            margin-bottom: 32px;
+            overflow-x: auto;
+            padding-bottom: 8px;
+        }}
+        .tag {{
+            padding: 8px 16px;
             border-radius: 20px;
-            border: 1px solid rgba(255,255,255,0.1);
+            border: 1px solid var(--border-color);
+            font-size: 0.9rem;
+            color: var(--text-main);
+            white-space: nowrap;
         }}
-        .summary {{
+        .tag.active {{
+            background-color: var(--accent-green);
+            color: white;
+            border-color: var(--accent-green);
+        }}
+        .date {{
+            font-family: "Georgia", serif;
+            font-size: 3rem;
+            margin: 0 0 24px 0;
+            font-weight: 400;
+            letter-spacing: -1px;
+        }}
+        .status-badge {{
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            padding: 6px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 20px;
+            font-size: 0.85rem;
+            margin-bottom: 24px;
+        }}
+        .status-dot {{
+            width: 8px;
+            height: 8px;
+            background-color: var(--accent-green);
+            border-radius: 50%;
+        }}
+        .title {{
+            font-size: 2rem;
+            font-weight: 700;
+            line-height: 1.2;
+            margin: 0 0 24px 0;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+        }}
+        .hero-image {{
+            width: 100%;
+            height: 240px;
+            background-color: #f3f4f6;
+            border-radius: 16px;
+            margin-bottom: 24px;
+            background-image: url('https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?q=80&w=1000&auto=format&fit=crop');
+            background-size: cover;
+            background-position: center;
+        }}
+        .content {{
             font-size: 1.1rem;
-            line-height: 1.7;
-            margin-bottom: 30px;
+            line-height: 1.6;
+            color: var(--text-light);
+            margin-bottom: 32px;
             white-space: pre-line;
         }}
-        .btn {{
-            display: inline-block;
-            background-color: var(--accent);
-            color: white;
-            text-decoration: none;
-            padding: 12px 24px;
-            border-radius: 8px;
+        .author-row {{
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding-top: 24px;
+            border-top: 1px solid var(--border-color);
+        }}
+        .author-info {{
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }}
+        .author-avatar {{
+            width: 40px;
+            height: 40px;
+            background-color: var(--border-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 1.2rem;
+        }}
+        .author-details {{
+            display: flex;
+            flex-direction: column;
+        }}
+        .author-name {{
             font-weight: 600;
-            transition: background-color 0.2s;
+            font-size: 0.95rem;
         }}
-        .btn:hover {{
-            background-color: var(--accent-hover);
-        }}
-        .footer {{
-            margin-top: 30px;
+        .meta-text {{
             font-size: 0.8rem;
-            color: var(--text-secondary);
-            text-align: center;
+            color: var(--text-light);
+        }}
+        .actions {{
+            display: flex;
+            gap: 12px;
+        }}
+        .action-btn {{
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-main);
+            text-decoration: none;
         }}
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>Trending Repo of the Day</h1>
-        <h2 class="repo-name">{repo_info['name']}</h2>
-        <div class="stats">
-            <span class="stat-badge">⭐ {repo_info['stars']:,} Stars</span>
-            <span class="stat-badge">💻 {repo_info['language']}</span>
+    <div class="app-container">
+        <div class="header-top">
+            <div class="logo-area">
+                <div class="logo-icon">▲</div>
+                RepoScout
+            </div>
+            <div class="menu-btn">≡</div>
         </div>
-        <div class="summary">
+        
+        <div class="tags-row">
+            <div class="tag active">All</div>
+            <div class="tag">Trending</div>
+            <div class="tag">{repo_info['language']}</div>
+            <div class="tag">GitHub</div>
+        </div>
+
+        <h1 class="date">{today_date}</h1>
+        
+        <div style="display: flex; justify-content: space-between; align-items: center;">
+            <div class="status-badge">
+                <div class="status-dot"></div>
+                New today
+            </div>
+            <a href="{repo_info['url']}" target="_blank" style="color: var(--text-main); text-decoration: none; font-size: 0.9rem; font-weight: 600;">View repo →</a>
+        </div>
+
+        <h2 class="title">{repo_info['name']}</h2>
+        
+        <div class="hero-image"></div>
+        
+        <div class="content">
             {summary}
         </div>
-        <a href="{repo_info['url']}" target="_blank" class="btn">View on GitHub</a>
         
-        <div class="footer">
-            Generated autonomously by Daily GitHub Explorer on AWS.
+        <div class="author-row">
+            <div class="author-info">
+                <div class="author-avatar">🤖</div>
+                <div class="author-details">
+                    <span class="author-name">Agent Explorer</span>
+                    <span class="meta-text">⭐ {repo_info['stars']:,} Stars • 1 min read</span>
+                </div>
+            </div>
+            <div class="actions">
+                <a href="{repo_info['url']}" target="_blank" class="action-btn">↗</a>
+            </div>
         </div>
     </div>
 </body>
@@ -218,6 +369,9 @@ def lambda_handler(event, context):
         website_url = f"http://{bucket_name}.s3-website-{os.environ.get('AWS_REGION', 'us-east-1')}.amazonaws.com"
         print(f"Successfully generated and uploaded today's site! View it at: {website_url}")
         
+        print("Attempting to post to Telegram...")
+        send_telegram_message(repo_info, summary)
+        
         return {
             'statusCode': 200,
             'body': json.dumps('Success! Site generated.')
@@ -240,5 +394,8 @@ if __name__ == "__main__":
     # Save locally instead of S3
     with open("index.html", "w", encoding="utf-8") as f:
         f.write(html_content)
+    
+    print("Attempting to post to Telegram...")
+    send_telegram_message(repo_info, summary)
     
     print("Successfully generated index.html locally! Open it in your browser to take a screenshot.")

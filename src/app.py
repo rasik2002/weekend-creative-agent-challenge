@@ -228,3 +228,17 @@ def lambda_handler(event, context):
             'statusCode': 500,
             'body': json.dumps(f'Error: {str(e)}')
         }
+
+if __name__ == "__main__":
+    print("Running local test...")
+    repo_info = fetch_trending_repo()
+    print(f"Fetched repo: {repo_info['name']}")
+    summary = generate_summary(repo_info)
+    print("Generated summary.")
+    html_content = generate_html(repo_info, summary)
+    
+    # Save locally instead of S3
+    with open("index.html", "w", encoding="utf-8") as f:
+        f.write(html_content)
+    
+    print("Successfully generated index.html locally! Open it in your browser to take a screenshot.")

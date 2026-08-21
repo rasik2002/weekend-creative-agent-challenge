@@ -43,8 +43,8 @@ Resources:
       Environment:
         Variables:
           BUCKET_NAME: !Ref WebsiteBucket
-          TELEGRAM_BOT_TOKEN: "8837970273:AAGG7R4ioHbvT1dcijRDJJWxfzlc5N2u4Tc"
-          TELEGRAM_CHAT_ID: "-1004409758302"
+          TELEGRAM_BOT_TOKEN: "YOUR_TELEGRAM_BOT_TOKEN_HERE"
+          TELEGRAM_CHAT_ID: "YOUR_TELEGRAM_CHAT_ID_HERE"
       Policies:
         # Give Lambda permission to write to our S3 bucket
         - S3CrudPolicy:

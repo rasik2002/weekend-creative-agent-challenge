@@ -106,7 +106,7 @@ def send_telegram_message(repo_info, summary):
 def generate_html(repo_info, summary):
     """Generates a beautiful HTML page."""
     from datetime import datetime
-    today_date = datetime.now().strftime("%B %d")
+    today_date = datetime.now().strftime("%B %d, %Y")
     
     html = f"""<!DOCTYPE html>
 <html lang="en">
@@ -114,229 +114,229 @@ def generate_html(repo_info, summary):
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Daily GitHub Explorer</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
     <style>
         :root {{
-            --bg-color: #f8f9fa;
-            --text-main: #111827;
-            --text-light: #6b7280;
-            --accent-green: #10b981;
-            --border-color: #e5e7eb;
+            --bg-color: #000000;
+            --surface-color: #0d1117;
+            --border-color: #222222;
+            --text-main: #ffffff;
+            --text-dim: #8b949e;
+            --accent-primary: #2f81f7;
+            --accent-success: #238636;
         }}
         body {{
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            font-family: 'Inter', -apple-system, sans-serif;
             background-color: var(--bg-color);
             color: var(--text-main);
             margin: 0;
             padding: 0;
             display: flex;
             justify-content: center;
+            line-height: 1.6;
         }}
         .app-container {{
-            background-color: #ffffff;
             width: 100%;
-            max-width: 480px;
+            max-width: 1024px;
             min-height: 100vh;
-            padding: 32px 24px;
+            padding: 48px 24px;
             box-sizing: border-box;
-            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
         }}
-        .header-top {{
+        .top-nav {{
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 24px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 16px;
+            margin-bottom: 40px;
         }}
         .logo-area {{
-            font-weight: 700;
-            font-size: 1.2rem;
+            font-weight: 600;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            color: var(--text-dim);
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+        }}
+        .logo-icon {{
+            color: var(--text-main);
+        }}
+        .date-badge {{
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 12px;
+            color: var(--text-dim);
+            background: var(--surface-color);
+            padding: 4px 8px;
+            border-radius: 4px;
+            border: 1px solid var(--border-color);
+        }}
+        .hero-section {{
+            margin-bottom: 32px;
+        }}
+        .hero-title {{
+            font-size: 32px;
+            font-weight: 600;
+            margin: 0 0 8px 0;
+            letter-spacing: -0.02em;
+        }}
+        .hero-subtitle {{
+            font-size: 16px;
+            color: var(--text-dim);
+            margin: 0;
+        }}
+        .bento-grid {{
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 16px;
+        }}
+        .bento-card {{
+            background: var(--bg-color);
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }}
+        .card-large {{
+            grid-column: span 8;
+        }}
+        .card-small {{
+            grid-column: span 4;
+        }}
+        @media (max-width: 768px) {{
+            .card-large, .card-small {{
+                grid-column: span 12;
+            }}
+        }}
+        .card-header {{
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 11px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+            color: var(--text-dim);
+            margin-bottom: 16px;
             display: flex;
             align-items: center;
             gap: 8px;
         }}
-        .logo-icon {{
-            width: 24px;
-            height: 24px;
-            background-color: var(--text-main);
-            color: white;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 12px;
-        }}
-        .menu-btn {{
-            border: 1px solid var(--border-color);
-            border-radius: 50%;
-            width: 40px;
-            height: 40px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            cursor: pointer;
-        }}
-        .tags-row {{
-            display: flex;
-            gap: 12px;
-            margin-bottom: 32px;
-            overflow-x: auto;
-            padding-bottom: 8px;
-        }}
-        .tag {{
-            padding: 8px 16px;
-            border-radius: 20px;
-            border: 1px solid var(--border-color);
-            font-size: 0.9rem;
-            color: var(--text-main);
-            white-space: nowrap;
-        }}
-        .tag.active {{
-            background-color: var(--accent-green);
-            color: white;
-            border-color: var(--accent-green);
-        }}
-        .date {{
-            font-family: "Georgia", serif;
-            font-size: 3rem;
-            margin: 0 0 24px 0;
-            font-weight: 400;
-            letter-spacing: -1px;
-        }}
-        .status-badge {{
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
-            border: 1px solid var(--border-color);
-            border-radius: 20px;
-            font-size: 0.85rem;
-            margin-bottom: 24px;
-        }}
-        .status-dot {{
-            width: 8px;
-            height: 8px;
-            background-color: var(--accent-green);
-            border-radius: 50%;
-        }}
-        .title {{
-            font-size: 2rem;
-            font-weight: 700;
-            line-height: 1.2;
-            margin: 0 0 24px 0;
-            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
-        }}
-        .hero-image {{
-            width: 100%;
-            height: 240px;
-            background-color: #f3f4f6;
-            border-radius: 16px;
-            margin-bottom: 24px;
-            background-image: url('https://images.unsplash.com/photo-1618401471353-b98afee0b2eb?q=80&w=1000&auto=format&fit=crop');
-            background-size: cover;
-            background-position: center;
-        }}
-        .content {{
-            font-size: 1.1rem;
-            line-height: 1.6;
-            color: var(--text-light);
-            margin-bottom: 32px;
+        .summary-text {{
+            font-size: 15px;
+            color: #dfe2eb;
             white-space: pre-line;
+            margin: 0;
         }}
-        .author-row {{
+        .stat-row {{
             display: flex;
             justify-content: space-between;
             align-items: center;
-            padding-top: 24px;
-            border-top: 1px solid var(--border-color);
+            padding: 12px 0;
+            border-bottom: 1px solid var(--border-color);
         }}
-        .author-info {{
-            display: flex;
-            align-items: center;
-            gap: 12px;
+        .stat-row:last-child {{
+            border-bottom: none;
+            padding-bottom: 0;
         }}
-        .author-avatar {{
-            width: 40px;
-            height: 40px;
-            background-color: var(--border-color);
-            border-radius: 50%;
+        .stat-label {{
+            color: var(--text-dim);
+            font-size: 14px;
+        }}
+        .stat-value {{
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            color: var(--text-main);
+        }}
+        .glow-value {{
+            color: var(--accent-primary);
+            text-shadow: 0 0 8px rgba(47, 129, 247, 0.4);
+        }}
+        .language-bar-container {{
+            width: 100%;
+            height: 6px;
+            background: var(--surface-color);
+            border-radius: 3px;
+            margin-top: 8px;
+            overflow: hidden;
             display: flex;
+        }}
+        .language-fill {{
+            height: 100%;
+            background: var(--accent-success);
+            width: 100%;
+        }}
+        .action-button {{
+            display: inline-flex;
             align-items: center;
             justify-content: center;
-            font-size: 1.2rem;
-        }}
-        .author-details {{
-            display: flex;
-            flex-direction: column;
-        }}
-        .author-name {{
-            font-weight: 600;
-            font-size: 0.95rem;
-        }}
-        .meta-text {{
-            font-size: 0.8rem;
-            color: var(--text-light);
-        }}
-        .actions {{
-            display: flex;
-            gap: 12px;
-        }}
-        .action-btn {{
-            width: 40px;
-            height: 40px;
-            border-radius: 50%;
+            padding: 8px 16px;
+            background: var(--surface-color);
             border: 1px solid var(--border-color);
-            display: flex;
-            align-items: center;
-            justify-content: center;
             color: var(--text-main);
             text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+            margin-top: auto;
+        }}
+        .action-button:hover {{
+            border-color: var(--accent-primary);
+            background: rgba(47, 129, 247, 0.1);
         }}
     </style>
 </head>
 <body>
     <div class="app-container">
-        <div class="header-top">
+        <nav class="top-nav">
             <div class="logo-area">
-                <div class="logo-icon">▲</div>
-                RepoScout
+                <span class="logo-icon">▲</span> Daily GitHub Explorer
             </div>
-            <div class="menu-btn">≡</div>
-        </div>
-        
-        <div class="tags-row">
-            <div class="tag active">All</div>
-            <div class="tag">Trending</div>
-            <div class="tag">{repo_info['language']}</div>
-            <div class="tag">GitHub</div>
-        </div>
+            <div class="date-badge">{today_date}</div>
+        </nav>
 
-        <h1 class="date">{today_date}</h1>
-        
-        <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div class="status-badge">
-                <div class="status-dot"></div>
-                New today
-            </div>
-            <a href="{repo_info['url']}" target="_blank" style="color: var(--text-main); text-decoration: none; font-size: 0.9rem; font-weight: 600;">View repo →</a>
-        </div>
+        <header class="hero-section">
+            <h1 class="hero-title">{repo_info['name']}</h1>
+            <p class="hero-subtitle">{repo_info['description']}</p>
+        </header>
 
-        <h2 class="title">{repo_info['name']}</h2>
-        
-        <div class="hero-image"></div>
-        
-        <div class="content">
-            {summary}
-        </div>
-        
-        <div class="author-row">
-            <div class="author-info">
-                <div class="author-avatar">🤖</div>
-                <div class="author-details">
-                    <span class="author-name">Agent Explorer</span>
-                    <span class="meta-text">⭐ {repo_info['stars']:,} Stars • 1 min read</span>
+        <div class="bento-grid">
+            <!-- AI Summary Card -->
+            <div class="bento-card card-large">
+                <div class="card-header">
+                    <span style="color: var(--accent-primary)">●</span> AI Analysis
                 </div>
+                <p class="summary-text">{summary}</p>
             </div>
-            <div class="actions">
-                <a href="{repo_info['url']}" target="_blank" class="action-btn">↗</a>
+
+            <!-- Repository Stats Card -->
+            <div class="bento-card card-small">
+                <div class="card-header">
+                    <span style="color: var(--text-dim)">○</span> Technical Metrics
+                </div>
+                
+                <div class="stat-row">
+                    <span class="stat-label">Stars</span>
+                    <span class="stat-value glow-value">{repo_info['stars']:,}</span>
+                </div>
+                <div class="stat-row">
+                    <span class="stat-label">Primary Language</span>
+                    <span class="stat-value">{repo_info['language']}</span>
+                </div>
+                
+                <div style="margin-top: 16px;">
+                    <div class="stat-label" style="font-size: 12px; margin-bottom: 4px;">Language Distribution</div>
+                    <div class="language-bar-container">
+                        <div class="language-fill"></div>
+                    </div>
+                </div>
+
+                <a href="{repo_info['url']}" target="_blank" class="action-button" style="margin-top: 32px;">
+                    View on GitHub →
+                </a>
             </div>
         </div>
     </div>
